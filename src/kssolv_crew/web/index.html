@@ -1,0 +1,24 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KSSOLV Crew</title><style>body{font:16px system-ui;max-width:850px;margin:40px auto;padding:0 20px;background:#f5f7fa;color:#183047}label{display:block;margin:14px 0}input,textarea,select,button{font:inherit;padding:10px;box-sizing:border-box}textarea,input{width:100%}button{cursor:pointer}pre{white-space:pre-wrap;background:#fff;padding:20px}a{display:block;margin:6px}</style>
+<h1>KSSOLV 能带任务</h1><p>CrewAI → Materials Project → 确定性转换 → MATLAB SCF / eband → 校验与报告</p>
+<p id="connection" role="status">正在检查本机服务连接…</p>
+<form id="form"><label>材料任务<textarea id="task" required>计算硅 Si 的能带图</textarea></label>
+<label>Materials Project API Key<input id="mpkey" type="password" required autocomplete="off"></label>
+<label>LLM API Key<input id="llmkey" type="password" required autocomplete="off"></label>
+<label>指定 MP ID（可选）<input id="mpid" placeholder="mp-149"></label>
+<label>模式<select id="mode"><option value="run">执行 MATLAB 计算</option><option value="prepare">只生成输入文件</option></select></label>
+<details><summary>SCF / k 路径参数（示例值，需要收敛测试）</summary>
+<label>ecut<input id="ecut" type="number" value="20" min="0.1" step="0.1"></label>
+<label>nbnd<input id="nbnd" type="number" value="14" min="1"></label>
+<label>SCF 网格<input id="mesh" value="2 2 2"></label>
+<label>每段 k 点数<input id="points" type="number" value="20" min="2"></label></details>
+<button>提交任务</button></form><p id="job"></p><pre id="status">等待任务</pre><div id="files"></div>
+<script>
+let timer; const by=id=>document.getElementById(id);
+async function checkConnection(){try{const r=await fetch('/health',{cache:'no-store'});const s=await r.json();if(!r.ok||s.service!=='kssolv-crew')throw Error();by('connection').textContent=s.kssolv_directory_present?'本机服务已连接 · KSSOLV 目录已找到':'本机服务已连接 · 请先配置 KSSOLV 目录';by('connection').style.color='#17613b'}catch(e){by('connection').textContent='服务连接已断开。请双击项目中的 start.cmd，等待程序重新打开网页。';by('connection').style.color='#ad3025'}}
+checkConnection();setInterval(checkConnection,5000);
+by('form').onsubmit=async e=>{e.preventDefault();clearTimeout(timer);by('files').replaceChildren();
+try{const res=await fetch('/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:by('task').value,mp_api_key:by('mpkey').value,llm_api_key:by('llmkey').value,material_id:by('mpid').value||null,mode:by('mode').value,parameters:{ecut:Number(by('ecut').value),nbnd:Number(by('nbnd').value),mesh:by('mesh').value.trim().split(/\s+/).map(Number),points_per_segment:Number(by('points').value)}})});
+const data=await res.json();if(!res.ok)throw Error(JSON.stringify(data));by('mpkey').value='';by('llmkey').value='';by('job').textContent='任务 '+data.job_id+'（请保持页面打开，访问令牌仅保存在内存）';poll(data)}catch(err){by('status').textContent=String(err)}};
+async function poll(job){try{const headers={Authorization:'Bearer '+job.token};const r=await fetch('/jobs/'+job.job_id,{headers});const s=await r.json();if(!r.ok)throw Error(JSON.stringify(s));by('status').textContent=JSON.stringify(s,null,2);by('files').replaceChildren();for(const name of s.artifacts||[]){const a=document.createElement('a');a.textContent='下载 '+name;a.href='#';a.onclick=async e=>{e.preventDefault();const r=await fetch('/jobs/'+job.job_id+'/artifacts/'+encodeURIComponent(name),{headers});if(!r.ok)return;const u=URL.createObjectURL(await r.blob());const link=document.createElement('a');link.href=u;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(u),3000)};by('files').append(a)}if(!['prepared','completed_unverified','failed','timed_out','interrupted'].includes(s.status))timer=setTimeout(()=>poll(job),2000)}catch(err){by('status').textContent=String(err)}}
+</script></html>

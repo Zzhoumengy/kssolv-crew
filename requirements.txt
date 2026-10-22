@@ -1,0 +1,2 @@
+# Metadata in pyproject.toml is the single dependency definition.
+-e .
