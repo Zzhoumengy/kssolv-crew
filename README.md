@@ -1,57 +1,43 @@
-# KSSOLV Crew 桌面版
+# KSSOLV Crew 安装教程
 
-现在可以直接在软件窗口里填写材料任务、API 密钥和参数，点击按钮运行。**不需要网站、浏览器、端口或命令输入。** 桌面版使用 Tk 原生窗口，直接启动原有 CrewAI / MATLAB 工作进程。
+通过桌面窗口输入材料任务，调用 Materials Project 获取结构，并使用本机 MATLAB 与 KSSOLV 计算能带。
 
-## 新用户先安装
+## 1. 准备环境
 
-其他电脑请按 [安装与首次测试教程](docs/INSTALL.md) 操作。推荐环境为 **Windows 64 位 + Python 3.12（含 Tcl/Tk）+ 已激活的 MATLAB R2025b**，并准备完整的 `kssolv-3o-dev` 文件夹和自己的两种 API 密钥。
+- Windows 64 位。
+- Python 3.12（64 位，安装时保留 pip、Tcl/Tk，建议勾选加入 PATH）。不要使用 Python 3.14。
+- 已安装并激活的完整 MATLAB；已验证版本为 R2025b，不能仅安装 MATLAB Runtime。
+- 完整的 `kssolv-3o-dev` 文件夹。
+- 自己的 Materials Project API 密钥，以及对应模型的 LLM API 密钥。
+- 可用网络，用于安装依赖、获取结构和调用语言模型。
 
-解压完整发布包 → 双击 **install.cmd**，等到 `Installation completed` → 双击 **start.cmd**。完整步骤、常见问题和成功判断见教程；首次安装需要联网下载依赖。发布包不是免安装的独立 EXE，也不包含 MATLAB 或其许可证。
+## 2. 下载并解压
 
-## 安装后怎么用
+在 GitHub 仓库点击 **Code → Download ZIP**，然后全部解压到可写的本地目录。GitHub 自动生成的源码 ZIP 不含同级的 KSSOLV，请自行补齐；若下载的是维护者提供的完整发布包，则已包含 KSSOLV。
 
-1. 打开 `智能体/kssolv-crew` 文件夹，双击 **start.cmd**。
-2. 在桌面窗口填写 **MP API Key** 和 **LLM API Key**。
-3. 输入材料任务；首次可保留示例“计算硅 Si 的能带图”和 MP ID `mp-149`。
-4. 建议先选择“只生成输入文件”，点击 **开始任务**。核对结构与参数后，再选择“执行 MATLAB 计算”运行。
-5. 在窗口下方切换 **报告 / 日志 / 能带图**。点击 **打开图文报告** 查看包含全部图片的 `report.html`，可单独复制分享，或用浏览器打印为 PDF。已有历史任务也支持生成，无需重新计算；原报告页是文字摘要。
-
-MP ID 是可选的；改为其他材料时也应修改或清空原来的 mp-149。任务、模式、参数和 LLM 模型都可在窗口填写。两种 API 密钥只在当前会话内存中保留，不自动保存，关闭软件后需重新填写。
-
-**DeepSeek 用户：LLM 模型填写 `deepseek/deepseek-flash`。** 此模式每个任务最多两次 HTTP 请求（规范化 + 报告），关闭思考模式，不自动重试；输出分别限制 192 / 600 tokens。不将 DeepSeek 密钥用于默认 OpenAI 模型。模型名依据 [DeepSeek 官方接口文档](https://api-docs.deepseek.com/zh-cn/)。
-
-使用 MP 和 LLM 仍需要互联网；“不用网站”指不需要网页界面，并不是离线获取材料或离线调用语言模型。
-
-## 目录保持这样即可
+推荐目录结构：
 
 ```text
-智能体/
-├── kssolv-3o-dev/       原软件，不需要移动或修改
-└── kssolv-crew/
-    ├── start.cmd       打开桌面版（默认入口）
-    ├── install.cmd     首次安装 / 更新依赖
-    ├── package.cmd     打包项目与完整 KSSOLV
-    └── runs/           所有任务的输入、日志和结果
+kssolv-crew/                 解压后的项目目录，名称可不同
+├── install.cmd
+├── start.cmd
+├── pyproject.toml
+├── scripts/
+├── src/
+└── kssolv-3o-dev/           完整 KSSOLV 文件夹
 ```
 
-KSSOLV 路径会自动识别，无需手动选择。完整发布包包含该目录，源码包需自行补齐。窗口右上角的“简易教程”可查看操作步骤和当前检测路径。软件不会修改 KSSOLV 内部代码。
+也支持将 `kssolv-3o-dev` 放在项目的同级目录。软件自动检测，无需选择路径。不要在 ZIP 预览中运行，也不要复制他人电脑的 `.venv`。
 
-## 任务运行与退出
+## 3. 安装并启动
 
-- 窗口保持响应，状态栏显示规范化、获取结构、生成输入、MATLAB 计算及报告阶段。当前窗口一次执行一个任务。
-- 可点击 **停止当前任务**；已生成的文件保留。任务运行时关闭窗口会询问是否停止并退出。
-- 历史任务保存在 `runs`，重新打开软件后仍可查看。异常退出的任务不自动重算，需重新提交；历史记录中未结束的状态应结合日志核对。
-- 默认 `ecut=20`、`nbnd=14`、`2×2×2` 网格、每段 20 点，泛函 PBE、Gaussian 展宽。示例参数需要按材料做收敛测试。
+1. 先手动打开 MATLAB，确认许可证正常可用，再关闭。
+2. 在项目目录双击 **install.cmd**，等待出现 **Installation completed**。
+3. 双击 **start.cmd** 打开桌面软件。
 
-## 换电脑 / 第一次安装
+安装脚本会创建本机 `.venv`，安装 Python 依赖和 MATLAB Engine。R2025b 使用 Engine 25.2.2。首次下载可能需要等待；只有出现完成提示才代表安装成功。
 
-1. 安装 **Python 3.12（64 位，含 Tcl/Tk）** 和有许可证的 MATLAB。
-2. 双击 **install.cmd**，等待 `Installation completed`。
-3. 双击 **start.cmd**。
-
-安装脚本优先复用项目虚拟环境、识别 MATLAB，安装对应 Engine 并检查 Tk 模块。Python 3.14 不适用于此项目。MATLAB R2025b 对应的引擎为 [MathWorks 官方发布的 25.2.2](https://pypi.org/project/matlabengine/25.2.2/)。
-
-若自动识别不到，在项目目录 PowerShell 指定路径：
+若找不到 Python 或 MATLAB，在项目目录打开 PowerShell，按实际位置修改路径后执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1 `
@@ -59,22 +45,28 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1 `
   -MatlabRoot 'C:\Program Files\MATLAB\R2025b'
 ```
 
-双击没有窗口时，先运行 install.cmd；若有启动错误，可查看 `.runtime/desktop-error.log`。执行任务失败则在软件“日志”页及结果目录查看原因。
+## 4. 首次计算
 
-## 打包给别人
+1. 填写自己的 **MP API Key** 和 **LLM API Key**。
+2. 使用 DeepSeek 时，模型填写 **`deepseek/deepseek-flash`**，也支持简写 `deepseek`。不要将 DeepSeek 密钥配默认 OpenAI 模型。
+3. 材料任务填写“计算硅 Si 的能带图”，MP ID 填 **`mp-149`**。
+4. 保留示例参数：`ecut=20`、`nbnd=14`、SCF 网格 `2 2 2`、每段 k 点 `20`。
+5. 选择 **执行 MATLAB 计算**，点击 **开始任务**，保持窗口打开，等待完成。“只生成输入文件”模式不运行 MATLAB。
+6. 点击 **打开图文报告** 查看全部图片；`report.html` 可单独分享，也能通过浏览器打印为 PDF。
 
-双击 **package.cmd**。`dist` 中生成包含完整 KSSOLV 的 ZIP。接收者解压后安装 Python / MATLAB，再运行 install.cmd → start.cmd。原始软件、Python 依赖与 MATLAB 仍受各自许可证和平台要求约束，ZIP 不包含 MATLAB 安装程序或许可证。
+MATLAB 在后台运行，看不到主窗口是正常的。任务记录及结果保存在项目 `runs` 目录；历史报告无需重新计算即可打开。软件右上角有 **简易教程**。
 
-## 原网页版（可选）
+更换材料时，请同步修改或清空 MP ID。密钥不会自动保存，关闭软件后需重新输入。DeepSeek 每个任务最多两次请求，重新提交会再次请求。
 
-原 Web/API 功能保留作兼容入口：**start-web.cmd** 启动，**stop.cmd** 停止。日常桌面使用不需要运行它们。直接关闭桌面窗口即可退出桌面版；stop.cmd 不负责关闭桌面版。
+## 5. 常见问题
 
-## 计算与验证范围
+| 问题 | 处理方法 |
+| --- | --- |
+| 没有启动窗口 | 先确认 install.cmd 成功，检查 `.runtime/desktop-error.log`。 |
+| 未检测到 KSSOLV | 将完整 `kssolv-3o-dev` 放入项目目录或项目同级；避免套两层同名目录。 |
+| API 认证失败 | 检查密钥、模型和额度是否匹配。 |
+| MATLAB 计算失败 | 检查许可证、Engine 版本、KSSOLV 与伪势文件，查看任务目录中的 MATLAB 日志。 |
+| 安装下载失败 | 检查网络或代理后重新运行 install.cmd。 |
+| 需要停止计算 | 点击“停止当前任务”；退出软件直接关闭窗口。 |
 
-LLM 仅做化学式规范化和辅助报告；mp-api 获取结构，pymatgen/numpy 生成输入，MATLAB 按原计算流程执行 `scf → H.rho → options.NSCF → eband`。适配层负责输入转换、结果导出及统一能量参考。
-
-0.2.1 已在本机完成 Si（mp-149）真实 MP / DeepSeek / MATLAB R2025b / KSSOLV 测试：SCF 6 次迭代达到阈值，10 段 NSCF 均返回有限的 14×20 能量数组，并统一到 SCF 费米参考。两次 DeepSeek 请求共输入 1180、输出 606 tokens。测试记录留在本机 runs，不装入发布包。
-
-实际文件验证确认此版本 KSSOLV 使用行向量晶格，eband 返回数值而不自动绘图。适配层现按这些接口导出 JSON/MAT 与 PNG；SCF 收敛和参数系统收敛分开记录。物理参数的收敛性仍需具体材料验证，不会仅凭输出图就认证收敛或自动推断带隙。
-
-[安装教程](docs/INSTALL.md) · [打包说明](docs/PACKAGING.md) · [验证记录](docs/VALIDATION.md) · [更新记录](docs/CHANGELOG.md) · [可选 Web API](docs/API.md)
+本项目已在 MATLAB R2025b 上完成 Si 的真实 SCF/NSCF 测试，其他 MATLAB 版本尚未完成端到端验证。默认参数用于首次测试，正式研究需自行检查截断能、k 网格和带数等收敛性。`completed_unverified` 表示流程完成但物理参数系统收敛尚未认证，不代表流程失败。

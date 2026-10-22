@@ -164,7 +164,7 @@ KSSOLV 自动检测
 
 获取材料和调用语言模型需要联网。DeepSeek 每次任务最多两次请求，重新提交会重新请求。无需为了查看报告重新计算。
 
-详细安装说明位于项目 docs/INSTALL.md。
+详细安装说明位于项目 README.md。
 """
         self.set_text(content, text)
         ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=8)
